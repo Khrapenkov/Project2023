@@ -4,8 +4,8 @@
 using namespace std;
 using namespace sf;
 
-const int WIDTH = 640;
-const int HEIGHT = 480;
+const int WIDTH = 700;
+const int HEIGHT = 500;
 
 
 float Fx(float x, float y) {
