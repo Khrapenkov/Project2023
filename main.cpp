@@ -121,7 +121,8 @@ int main()
     RenderWindow window(VideoMode(WIDTH, HEIGHT), L"Project_2023", Style::Default);
     window.setVerticalSyncEnabled(true);
     // window.setKeyRepeatEnabled(false);
-    int time_of_pressing_mb_l = 0, time_of_pressing_mb_r = 0;
+    // bool mb_l_is_pressed = false, mb_r_is_pressed = false;
+    int time_of_pressing_mb_r = 0;
     int mouse_button_l_x0 = 0, mouse_button_l_y0 = 0, mouse_button_r_x0 = 0, mouse_button_r_y0 = 0;
     bool mouse_left_button_is_pressed = false;
     bool mouse_right_button_is_pressed = false;
@@ -136,39 +137,38 @@ int main()
             else {
                 if (event.type == Event::MouseButtonPressed) {
                     if (event.mouseButton.button == Mouse::Left) {
-                        mouse_left_button_is_pressed = true;
-                        if (time_of_pressing_mb_l == 0) {
+                        if (mouse_left_button_is_pressed == false) {
                             mouse_button_l_x0 = event.mouseButton.x;
                             mouse_button_l_y0 = event.mouseButton.y;
                         }
-                        time_of_pressing_mb_l += 1;
+                        mouse_left_button_is_pressed = true;
                     }
                     else if (event.mouseButton.button == Mouse::Right) {
-                        mouse_right_button_is_pressed = true;
-                        if (time_of_pressing_mb_r == 0) {
+                        if (mouse_right_button_is_pressed == false) {
                             mouse_button_r_x0 = event.mouseButton.x;
                             mouse_button_r_y0 = event.mouseButton.y;
                         }
+                        mouse_right_button_is_pressed = true;
                         time_of_pressing_mb_r += 1;
                     }
                 }
                 if (event.type == Event::MouseButtonReleased) {
                     if (event.mouseButton.button == Mouse::Left) {
-                        mouse_left_button_is_pressed = false;
                         float vx0 = (mouse_button_l_x0 - event.mouseButton.x) * 0.1;
                         float vy0 = (mouse_button_l_y0 - event.mouseButton.y) * 0.1;
                         balls.newball(mouse_button_l_x0, mouse_button_l_y0, vx0, vy0);
-                        time_of_pressing_mb_l = 0;
+                        mouse_left_button_is_pressed = false;
                     }
                     else if (event.mouseButton.button == Mouse::Right) {
+                        centers.newcenter(mouse_button_r_x0, mouse_button_r_y0, time_of_pressing_mb_r);
                         mouse_right_button_is_pressed = false;
-                        int r_center = time_of_pressing_mb_r*10;
-                        centers.newcenter(mouse_button_r_x0, mouse_button_r_y0, r_center);
                         time_of_pressing_mb_r = 0;
                     }
                 }
             }
         }
+        if (mouse_right_button_is_pressed)
+            time_of_pressing_mb_r += 1;
         balls.move();
         balls.ball_is_out();
         window.clear(Color::White);
@@ -177,7 +177,7 @@ int main()
             window.draw(growing_line(mouse_button_l_x0, mouse_button_l_y0,
                 Mouse::getPosition(window).x, Mouse::getPosition(window).y));
         if (mouse_right_button_is_pressed)
-            window.draw(growing_spot(mouse_button_r_x0, mouse_button_r_y0, time_of_pressing_mb_r * 5));
+            window.draw(growing_spot(mouse_button_r_x0, mouse_button_r_y0, time_of_pressing_mb_r));
         for (auto center : centers.draw())
             window.draw(center);
         for (auto ball : balls.draw())
