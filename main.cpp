@@ -125,8 +125,6 @@ int main()
     int mouse_button_l_x0 = 0, mouse_button_l_y0 = 0, mouse_button_r_x0 = 0, mouse_button_r_y0 = 0;
     bool mouse_left_button_is_pressed = false;
     bool mouse_right_button_is_pressed = false;
-        bool mouse_is_moved = false;
-    // bool mouse_is_moved = false;
     Balls balls;
     Centers centers;
 
@@ -169,17 +167,15 @@ int main()
                         time_of_pressing_mb_r = 0;
                     }
                 }
-                if (event.type == Event::MouseMoved) {
-                    mouse_is_moved = true;
-                }
             }
         }
         balls.move();
         balls.ball_is_out();
         window.clear(Color::White);
 
-        if (mouse_left_button_is_pressed && mouse_is_moved)
-            window.draw(growing_line(mouse_button_l_x0, mouse_button_l_y0, event.mouseMove.x, event.mouseMove.y));
+        if (mouse_left_button_is_pressed)
+            window.draw(growing_line(mouse_button_l_x0, mouse_button_l_y0,
+                Mouse::getPosition(window).x, Mouse::getPosition(window).y));
         if (mouse_right_button_is_pressed)
             window.draw(growing_spot(mouse_button_r_x0, mouse_button_r_y0, time_of_pressing_mb_r * 5));
         for (auto center : centers.draw())
