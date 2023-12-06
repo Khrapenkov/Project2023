@@ -1,28 +1,30 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
+#include <iostream>
 
 using namespace std;
 using namespace sf;
 
-const int WIDTH = 700;
-const int HEIGHT = 500;
+const int WIDTH = 1200;
+const int HEIGHT = 700;
 
 
 float Fx(float x, float y) {
-    return 0;
+    return 0.f;
 }
 
 float Fy(float x, float y) {
-    return 0;
+    return 0.f;
 }
 
 class Balls {
     struct Ball {
         float x, y, vx, vy;
     };
-    const int r = 10;
-    const int m = 4 * pow(r, 3);
+    int r = 10;
+    int m = 4 * pow(r, 3);
     vector<Ball> bls;
+    
 public:
     Balls() : bls({}) {}
 
@@ -35,7 +37,7 @@ public:
         }
     }
 
-    int getsize() {
+    int getnomber() {
         return bls.size();
     }
 
@@ -43,16 +45,90 @@ public:
         Ball new_ball{ x0, y0, vx0, vy0 };
         bls.push_back(new_ball);
     }
+
+    vector<CircleShape> draw() {
+        vector<CircleShape> circles = {};
+        for (auto b : bls) {
+            CircleShape circle(r, 100);
+            circle.setFillColor(Color::Red);
+            circle.setOrigin(Vector2f(-b.x + r, -b.y + r));
+            circles.push_back(circle);
+        }
+        return circles;
+    }
+
+    void ball_is_out() {
+        for (auto iter = bls.begin(); iter != bls.end();)
+        {
+            if ((*iter).x > WIDTH * 2 || (*iter).x < - WIDTH || (*iter).y > HEIGHT * 2 || (*iter).y < - HEIGHT)
+                iter = bls.erase(iter);
+            else
+                ++iter;
+        }
+    }
 };
+
+class Centers {
+    struct Center {
+        int x, y;
+        int r;
+    };
+
+    vector<Center> ctrs;
+
+public:
+    Centers() : ctrs({}) {}
+
+    int getnomber() {
+        return ctrs.size();
+    }
+
+    void newcenter(float x0, float y0, int r) {
+        Center new_center{ x0, y0, r };
+        ctrs.push_back(new_center);
+    }
+
+    vector<CircleShape> draw() {
+        vector<CircleShape> circles = {};
+        for (auto c : ctrs) {
+            CircleShape circle(c.r, 100);
+            circle.setFillColor(Color::Black);
+            circle.setOrigin(Vector2f(-c.x + c.r, -c.y + c.r));
+            circles.push_back(circle);
+        }
+        return circles;
+    }
+};
+
+VertexArray growing_line(int x, int y, int mouse_x, int mouse_y) {
+    VertexArray line(LinesStrip, 2);
+    line[0].position = Vector2f(x, y);
+    line[0].color = Color::Black;
+    line[1].position = Vector2f(mouse_x, mouse_y);
+    line[1].color = Color::Red;
+    return line;
+}
+
+CircleShape growing_spot(float x, float y, int r) {
+    CircleShape spot(r, 100);
+    spot.setFillColor(Color::Black);
+    spot.setOrigin(Vector2f(-x + r, -y + r));
+    return spot;
+}
 
 int main()
 {
     RenderWindow window(VideoMode(WIDTH, HEIGHT), L"Project_2023", Style::Default);
     window.setVerticalSyncEnabled(true);
-    window.setKeyRepeatEnabled(false);
-    int time_of_pressing_mb = 0;
-    float mouse_button_x0, mouse_button_y0;
+    // window.setKeyRepeatEnabled(false);
+    int time_of_pressing_mb_l = 0, time_of_pressing_mb_r = 0;
+    int mouse_button_l_x0 = 0, mouse_button_l_y0 = 0, mouse_button_r_x0 = 0, mouse_button_r_y0 = 0;
+    bool mouse_left_button_is_pressed = false;
+    bool mouse_right_button_is_pressed = false;
+        bool mouse_is_moved = false;
+    // bool mouse_is_moved = false;
     Balls balls;
+    Centers centers;
 
     while (window.isOpen()) {
         Event event;
@@ -61,26 +137,55 @@ int main()
                 window.close();
             else {
                 if (event.type == Event::MouseButtonPressed) {
-                    if (time_of_pressing_mb == 0) {
-                        mouse_button_x0 = event.mouseButton.x;
-                        mouse_button_y0 = event.mouseButton.y;
+                    if (event.mouseButton.button == Mouse::Left) {
+                        mouse_left_button_is_pressed = true;
+                        if (time_of_pressing_mb_l == 0) {
+                            mouse_button_l_x0 = event.mouseButton.x;
+                            mouse_button_l_y0 = event.mouseButton.y;
+                        }
+                        time_of_pressing_mb_l += 1;
                     }
-                    time_of_pressing_mb += 1;
+                    else if (event.mouseButton.button == Mouse::Right) {
+                        mouse_right_button_is_pressed = true;
+                        if (time_of_pressing_mb_r == 0) {
+                            mouse_button_r_x0 = event.mouseButton.x;
+                            mouse_button_r_y0 = event.mouseButton.y;
+                        }
+                        time_of_pressing_mb_r += 1;
+                    }
                 }
                 if (event.type == Event::MouseButtonReleased) {
-                    float vx0 = (mouse_button_x0 - event.mouseButton.x) * 0.1;
-                    float vy0 = (mouse_button_y0 - event.mouseButton.y) * 0.1;
-                    balls.newball(mouse_button_x0, mouse_button_y0, vx0, vy0);
-                    time_of_pressing_mb = 0;
+                    if (event.mouseButton.button == Mouse::Left) {
+                        mouse_left_button_is_pressed = false;
+                        float vx0 = (mouse_button_l_x0 - event.mouseButton.x) * 0.1;
+                        float vy0 = (mouse_button_l_y0 - event.mouseButton.y) * 0.1;
+                        balls.newball(mouse_button_l_x0, mouse_button_l_y0, vx0, vy0);
+                        time_of_pressing_mb_l = 0;
+                    }
+                    else if (event.mouseButton.button == Mouse::Right) {
+                        mouse_right_button_is_pressed = false;
+                        int r_center = time_of_pressing_mb_r*10;
+                        centers.newcenter(mouse_button_r_x0, mouse_button_r_y0, r_center);
+                        time_of_pressing_mb_r = 0;
+                    }
+                }
+                if (event.type == Event::MouseMoved) {
+                    mouse_is_moved = true;
                 }
             }
         }
         balls.move();
-        /*for (auto b : balls.bls) {
-            CircleShape b;
-            window.draw(b);
-        }*/
+        balls.ball_is_out();
         window.clear(Color::White);
+
+        if (mouse_left_button_is_pressed && mouse_is_moved)
+            window.draw(growing_line(mouse_button_l_x0, mouse_button_l_y0, event.mouseMove.x, event.mouseMove.y));
+        if (mouse_right_button_is_pressed)
+            window.draw(growing_spot(mouse_button_r_x0, mouse_button_r_y0, time_of_pressing_mb_r * 5));
+        for (auto center : centers.draw())
+            window.draw(center);
+        for (auto ball : balls.draw())
+            window.draw(ball);
         window.display();
     }
 
