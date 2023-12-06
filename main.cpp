@@ -121,7 +121,6 @@ int main()
     RenderWindow window(VideoMode(WIDTH, HEIGHT), L"Project_2023", Style::Default);
     window.setVerticalSyncEnabled(true);
     // window.setKeyRepeatEnabled(false);
-    // bool mb_l_is_pressed = false, mb_r_is_pressed = false;
     int time_of_pressing_mb_r = 0;
     int mouse_button_l_x0 = 0, mouse_button_l_y0 = 0, mouse_button_r_x0 = 0, mouse_button_r_y0 = 0;
     bool mouse_left_button_is_pressed = false;
