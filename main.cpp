@@ -8,13 +8,15 @@ using namespace sf;
 const int WIDTH = 1200;
 const int HEIGHT = 700;
 
+const float mu = 0.01;  // for mass corrections
+float G = 0.01;  // for gravity constant
+
+
 class Centers {
     struct Center {
         int x, y;
         int r;
     };
-    float G = 0.00005;
-    float mu = 0.4;
     vector<Center> ctrs;
 
 public:
@@ -40,23 +42,23 @@ public:
         return circles;
     }
 
-    float Fx(float x, float y, int r) {
+    float gravity_Fx(float x, float y, int r) {
         float fx = 0;
-        int m = mu * pow(r, 3);
+        int m = mu * 4 * pow(r, 3);
         for (auto c : ctrs) {
             float r2 = pow(x - c.x, 2) + pow(y - c.y, 2);
-            int mi = mu * pow(c.r, 3);
+            int mi = mu * 4 * pow(c.r, 3);
             fx += G * m * mi * (c.x - x) / pow(r2, 3 / 2);
         }
         return fx;
     }
 
-    float Fy(float x, float y, int r) {
+    float gravity_Fy(float x, float y, int r) {
         float fy = 0;
-        int m = mu * pow(r, 3);
+        int m = mu * 4 * pow(r, 3);
         for (auto c : ctrs) {
             float r2 = pow(x - c.x, 2) + pow(y - c.y, 2);
-            int mi = mu * pow(c.r, 3);
+            int mi = mu * 4 * pow(c.r, 3);
             fy += G * m * mi * (c.y - y) / pow(r2, 3 / 2);
         }
         return fy;
@@ -65,7 +67,7 @@ public:
     bool ball_in_center(float x, float y) {
         bool ball_is_in_center = false;
         for (auto c : ctrs) {
-            if (c.x == x or c.y == y)
+            if (abs(c.x - x) <= 8 && abs(c.y - y) <= 8)
                 ball_is_in_center = true;
         }
         return ball_is_in_center;
@@ -82,7 +84,6 @@ class Balls : Centers {
         float x, y, vx, vy;
     };
     int r = 8;
-    int m = 4 * pow(r, 3);
     vector<Ball> bls;
     
 public:
@@ -92,8 +93,8 @@ public:
         for (auto& b : bls) {
             b.x += b.vx;
             b.y += b.vy;
-            b.vx += centers.Fx(b.x, b.y, r);
-            b.vy += centers.Fy(b.x, b.y, r);
+            b.vx += centers.gravity_Fx(b.x, b.y, r);
+            b.vy += centers.gravity_Fy(b.x, b.y, r);
         }
     }
 
@@ -121,7 +122,7 @@ public:
         for (auto iter = bls.begin(); iter != bls.end();) {
             if ((*iter).x > WIDTH * 4 || (*iter).x < -3 * WIDTH || (*iter).y > HEIGHT * 4 || (*iter).y < -3 * HEIGHT)
                 iter = bls.erase(iter);
-            if (ball_in_center((*iter).x, (*iter).y))
+            if (centers.ball_in_center((*iter).x, (*iter).y))
                 iter = bls.erase(iter);
             else
                 ++iter;
@@ -154,11 +155,14 @@ int main()
 {
     RenderWindow window(VideoMode(WIDTH, HEIGHT), L"Project_2023", Style::Default);
     window.setVerticalSyncEnabled(true);
+    // window.setFramerateLimit(60);  // another way to control FPS
     // window.setKeyRepeatEnabled(false);
-    int time_of_pressing_mb_r = 0;
     int mouse_button_l_x0 = 0, mouse_button_l_y0 = 0, mouse_button_r_x0 = 0, mouse_button_r_y0 = 0;
+    int spot_radius = 0;
     bool mouse_left_button_is_pressed = false;
     bool mouse_right_button_is_pressed = false;
+    bool up_is_pressed = false;
+    bool down_is_pressed = false;
     Balls balls;
     Centers centers;
 
@@ -182,7 +186,7 @@ int main()
                             mouse_button_r_y0 = event.mouseButton.y;
                         }
                         mouse_right_button_is_pressed = true;
-                        time_of_pressing_mb_r += 1;
+                        spot_radius += 1;
                     }
                 }
                 else if (event.type == Event::MouseButtonReleased) {
@@ -193,30 +197,47 @@ int main()
                         mouse_left_button_is_pressed = false;
                     }
                     else if (event.mouseButton.button == Mouse::Right) {
-                        centers.newcenter(mouse_button_r_x0, mouse_button_r_y0, time_of_pressing_mb_r);
+                        centers.newcenter(mouse_button_r_x0, mouse_button_r_y0, spot_radius/2);
                         mouse_right_button_is_pressed = false;
-                        time_of_pressing_mb_r = 0;
+                        spot_radius = 0;
                     }
                 }
                 else if (event.type == Event::KeyPressed) {
-                    if (event.key.code = Keyboard::B)
+                    if (Keyboard::isKeyPressed(Keyboard::Enter))
+                        window.close();
+                    else if (Keyboard::isKeyPressed(Keyboard::B))
                         balls.bad_ball();
-                    else if (event.key.code = Keyboard::C)
+                    else if (Keyboard::isKeyPressed(Keyboard::C))
                         centers.bad_center();
+                    /*else if (Keyboard::isKeyPressed(Keyboard::Up))
+                        up_is_pressed = true;
+                    else if (Keyboard::isKeyPressed(Keyboard::Down))
+                        down_is_pressed = true;*/
                 }
+                /*else if (event.type == Event::KeyReleased) {
+                    up_is_pressed = false;
+                    down_is_pressed = false;
+                }*/
             }
         }
         if (mouse_right_button_is_pressed)
-            time_of_pressing_mb_r += 1;
+            spot_radius += 1;
+        /*if (up_is_pressed)
+            spot_radius += 1;
+        if (down_is_pressed && spot_radius != 0)
+            spot_radius -= 1;*/
         balls.move(centers);
         balls.ball_is_out(centers);
-        window.clear(Color::White);
+        window.clear(Color(240, 240, 240));
 
         if (mouse_left_button_is_pressed)
             window.draw(growing_line(mouse_button_l_x0, mouse_button_l_y0,
                 Mouse::getPosition(window).x, Mouse::getPosition(window).y));
-        if (mouse_right_button_is_pressed)
-            window.draw(growing_spot(mouse_button_r_x0, mouse_button_r_y0, time_of_pressing_mb_r));
+        if (mouse_right_button_is_pressed) {
+            //window.draw(growing_line(mouse_button_r_x0, mouse_button_r_y0,
+            //    Mouse::getPosition(window).x, Mouse::getPosition(window).y));
+                window.draw(growing_spot(mouse_button_r_x0, mouse_button_r_y0, spot_radius/2));
+        }
         for (auto center : centers.draw())
             window.draw(center);
         for (auto ball : balls.draw())
