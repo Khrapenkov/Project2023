@@ -8,8 +8,8 @@ using namespace sf;
 const int WIDTH = 1200;
 const int HEIGHT = 700;
 
-const float mu = 0.01;  // for mass corrections
-float G = 0.01;  // for gravity constant
+const float rho = 0.01;  // density (плотность)
+float G = 0.01;  // gravity constant
 
 
 class Centers {
@@ -44,21 +44,21 @@ public:
 
     float gravity_Fx(float x, float y, int r) {
         float fx = 0;
-        int m = mu * 4 * pow(r, 3);
+        int m = rho * 4 * pow(r, 3);
         for (auto c : ctrs) {
             float r2 = pow(x - c.x, 2) + pow(y - c.y, 2);
-            int mi = mu * 4 * pow(c.r, 3);
-            fx += G * m * mi * (c.x - x) / pow(r2, 3 / 2);
+            int mc = rho * 4 * pow(c.r, 3);
+            fx += G * m * mc * (c.x - x) / pow(r2, 3 / 2);
         }
         return fx;
     }
 
     float gravity_Fy(float x, float y, int r) {
         float fy = 0;
-        int m = mu * 4 * pow(r, 3);
+        int m = rho * 4 * pow(r, 3);
         for (auto c : ctrs) {
             float r2 = pow(x - c.x, 2) + pow(y - c.y, 2);
-            int mi = mu * 4 * pow(c.r, 3);
+            int mi = rho * 4 * pow(c.r, 3);
             fy += G * m * mi * (c.y - y) / pow(r2, 3 / 2);
         }
         return fy;
@@ -67,13 +67,13 @@ public:
     bool ball_in_center(float x, float y) {
         bool ball_is_in_center = false;
         for (auto c : ctrs) {
-            if (abs(c.x - x) <= 8 && abs(c.y - y) <= 8)
+            if (abs(c.x - x) <= 3 && abs(c.y - y) <= 3)
                 ball_is_in_center = true;
         }
         return ball_is_in_center;
     }
 
-    void bad_center() {
+    void delete_center() {
         if (!ctrs.empty())
             ctrs.erase(ctrs.begin());
     }
@@ -122,14 +122,14 @@ public:
         for (auto iter = bls.begin(); iter != bls.end();) {
             if ((*iter).x > WIDTH * 4 || (*iter).x < -3 * WIDTH || (*iter).y > HEIGHT * 4 || (*iter).y < -3 * HEIGHT)
                 iter = bls.erase(iter);
-            if (centers.ball_in_center((*iter).x, (*iter).y))
+            else if (centers.ball_in_center((*iter).x, (*iter).y))
                 iter = bls.erase(iter);
             else
                 ++iter;
         }
     }
 
-    void bad_ball() {
+    void delete_ball() {
         if (!bls.empty())
             bls.erase(bls.begin());
     }
@@ -156,7 +156,7 @@ int main()
     RenderWindow window(VideoMode(WIDTH, HEIGHT), L"Project_2023", Style::Default);
     window.setVerticalSyncEnabled(true);
     // window.setFramerateLimit(60);  // another way to control FPS
-    // window.setKeyRepeatEnabled(false);
+    // window.setKeyRepeatEnabled(false);  // to disable key repetition
     int mouse_button_l_x0 = 0, mouse_button_l_y0 = 0, mouse_button_r_x0 = 0, mouse_button_r_y0 = 0;
     int spot_radius = 0;
     bool mouse_left_button_is_pressed = false;
@@ -206,9 +206,9 @@ int main()
                     if (Keyboard::isKeyPressed(Keyboard::Enter))
                         window.close();
                     else if (Keyboard::isKeyPressed(Keyboard::B))
-                        balls.bad_ball();
+                        balls.delete_ball();
                     else if (Keyboard::isKeyPressed(Keyboard::C))
-                        centers.bad_center();
+                        centers.delete_center();
                     /*else if (Keyboard::isKeyPressed(Keyboard::Up))
                         up_is_pressed = true;
                     else if (Keyboard::isKeyPressed(Keyboard::Down))
